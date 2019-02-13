@@ -1,39 +1,39 @@
-// DESCRIPTION: Verilator: Verilog example module
-//
-// This file ONLY is placed into the Public Domain, for any use,
-// without warranty, 2003 by Wilson Snyder.
-// ======================================================================
-
-// This is intended to be a complex example of several features, please also
-// see the simpler examples/hello_world_c.
+localparam depth=256;
+localparam memfile = "firmware/default.hex";
 
 module top
   (
    // Declare some signals so we can see how I/O works
-   input         clk,
-   input         fastclk,
-   input         reset_l,
+   input 		     clk,
+   input 		     rst_n,
 
-   output [1:0]  out_small,
-   output [39:0] out_quad,
-   output [69:0] out_wide,
-   input [1:0]   in_small,
-   input [39:0]  in_quad,
-   input [69:0]  in_wide
+   input [31:0] 	     din,
+   input [$clog2(depth)-1:0] waddr,
+   input [3:0] 		     wen,
+   input [$clog2(depth)-1:0] raddr, 
+
+   output [31:0] 	     dout
    );
 
    // Connect up the outputs, using some trivial logic
-   wire [1:0]    out_small = ~reset_l ? '0 : (in_small + 2'b1);
-   wire [39:0]   out_quad  = ~reset_l ? '0 : (in_quad + 40'b1);
-   wire [69:0]   out_wide  = ~reset_l ? '0 : (in_wide + 70'b1);
+   wire [31:0] 		     _din   = ~rst_n ? '0 : din;
+   wire [3:0] 		     _wen   = ~rst_n ? '0 : wen;
+   wire [$clog2(depth)-1:0]  _waddr = ~rst_n ? '0 : waddr;
+   wire [$clog2(depth)-1:0]  _raddr = ~rst_n ? '0 : raddr;   
 
    // And an example sub module. The submodule will print stuff.
-   sub sub (/*AUTOINST*/
-            // Inputs
-            .clk                        (clk),
-            .fastclk                    (fastclk),
-            .reset_l                    (reset_l));
-
+   ram 
+     #(.depth   (depth),
+       .memfile (memfile))
+   ram (/*AUTOINST*/
+        // Inputs
+        .clk   (clk),
+	.din   (_din),
+	.wen   (_wen),
+	.waddr (_waddr),
+	.raddr (_raddr),
+	.dout  (dout));
+   
    // Print some stuff as an example
    initial begin
       $display("[%0t] Model running...\n", $time);
