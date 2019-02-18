@@ -28,7 +28,7 @@ int main(int argc, char** argv, char** env) {
     top->rst_n = 0;
     top->clk = 0;
 
-    int done = 0;
+    int done  = 0;
     
     while (!(done|Verilated::gotFinish())) {
         main_time++;
@@ -41,18 +41,12 @@ int main(int argc, char** argv, char** env) {
         }
         if (main_time > 1 && main_time < 10) {
             top->rst_n = 0;	    
-	    top->raddr = 0;
-	    top->waddr = 0;
-	    top->wen   = 0xF;
-	    top->din   = 0;	    
 	} else {
             top->rst_n = !0;
         }
 	
-        if ((main_time % 10) == 3) {
-	  top->raddr += 1;
-	  if (top->raddr == 255)
-	    done = 1;
+        if (main_time == 1000) {
+	  done = 1;
 	}	
 	
         top->eval();

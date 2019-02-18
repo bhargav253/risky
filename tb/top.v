@@ -1,38 +1,102 @@
-localparam depth=256;
-localparam memfile = "firmware/default.hex";
+`define RISCV_BOOT_ADDRESS      32'h00000000
+
+localparam depth=2048;
+localparam memfile = "firmware/firmware.hex";
 
 module top
   (
    // Declare some signals so we can see how I/O works
    input 		     clk,
-   input 		     rst_n,
-
-   input [31:0] 	     din,
-   input [$clog2(depth)-1:0] waddr,
-   input [3:0] 		     wen,
-   input [$clog2(depth)-1:0] raddr, 
-
-   output [31:0] 	     dout
+   input 		     rst_n
    );
+   
+   wire 		     intr        = 1'b0;   
+   wire [ 31:0] 	     boot_vector = `RISCV_BOOT_ADDRESS;   
 
-   // Connect up the outputs, using some trivial logic
-   wire [31:0] 		     _din   = ~rst_n ? '0 : din;
-   wire [3:0] 		     _wen   = ~rst_n ? '0 : wen;
-   wire [$clog2(depth)-1:0]  _waddr = ~rst_n ? '0 : waddr;
-   wire [$clog2(depth)-1:0]  _raddr = ~rst_n ? '0 : raddr;   
+   wire [ 31:0] 	     core__d_addr;
+   wire [ 31:0] 	     core__d_wdata;
+   wire 		     core__d_ren;
+   wire [ 3:0] 		     core__d_wen;
+   wire [ 10:0] 	     core__d_req_tag; 
 
-   // And an example sub module. The submodule will print stuff.
-   ram 
+   wire 		     d__core_accept;
+   wire 		     d__core_val;
+   wire 		     d__core_error;
+   wire [ 31:0] 	     d__core_rdata;
+   wire [ 10:0] 	     d__core_resp_tag;
+
+   wire [ 31:0] 	     core__i_addr;
+   wire 		     core__i_ren;
+   
+   wire 		     i__core_accept;
+   wire 		     i__core_val;
+   wire 		     i__core_error;
+   wire [ 31:0] 	     i__core_rdata;
+   wire [ 31:0] 	     i__core_pc;
+   
+   
+   
+   /*verilator lint_off PINCONNECTEMPTY*/
+   riscv_core core
+     (
+      // Inputs
+      .clk_i(clk)
+      ,.rst_i(~rst_n)
+      ,.mem_d_data_rd_i(d__core_rdata)
+      ,.mem_d_accept_i(d__core_accept)
+      ,.mem_d_ack_i(d__core_val)
+      ,.mem_d_resp_tag_i(d__core_resp_tag)
+      ,.mem_d_error_i(d__core_error)
+      ,.mem_i_accept_i(i__core_accept)
+      ,.mem_i_valid_i(i__core_val)
+      ,.mem_i_inst_i(i__core_rdata)
+      ,.mem_i_inst_pc_i(i__core_pc)
+      ,.mem_i_error_i(i__core_error)
+      ,.intr_i(intr)
+      ,.reset_vector_i(boot_vector)
+      ,.cpu_id_i(32'b0)
+
+      // Outputs
+      ,.mem_d_addr_o(core__d_addr)
+      ,.mem_d_data_wr_o(core__d_wdata)
+      ,.mem_d_rd_o(core__d_ren)
+      ,.mem_d_wr_o(core__d_wen)
+      ,.mem_d_cacheable_o()
+      ,.mem_d_req_tag_o(core__d_req_tag)
+      ,.mem_d_invalidate_o()
+      ,.mem_d_flush_o()    
+      ,.mem_i_rd_o(core__i_ren)
+      ,.mem_i_flush_o()
+      ,.mem_i_invalidate_o()
+      ,.mem_i_pc_o(core__i_addr)
+      );
+   /*verilator lint_on PINCONNECTEMPTY*/
+   
+   
+   iob 
      #(.depth   (depth),
        .memfile (memfile))
-   ram (/*AUTOINST*/
-        // Inputs
-        .clk   (clk),
-	.din   (_din),
-	.wen   (_wen),
-	.waddr (_waddr),
-	.raddr (_raddr),
-	.dout  (dout));
+   iob (
+	// inputs
+	.clk(clk) 
+	,.rst(~rst_n)
+	,.core__d_addr(core__d_addr)
+	,.core__d_wdata(core__d_wdata)
+	,.core__d_ren(core__d_ren)
+	,.core__d_wen(core__d_wen)
+	,.core__d_req_tag(core__d_req_tag) 
+	,.core__i_addr(core__i_addr)
+	,.core__i_ren(core__i_ren)
+	,.d__core_accept(d__core_accept)
+	,.d__core_val(d__core_val)
+	,.d__core_error(d__core_error)
+	,.d__core_rdata(d__core_rdata)
+	,.d__core_resp_tag(d__core_resp_tag)
+	,.i__core_accept(i__core_accept)
+	,.i__core_val(i__core_val)
+	,.i__core_error(i__core_error)
+	,.i__core_rdata(i__core_rdata)
+	,.i__core_pc(i__core_pc));
    
    // Print some stuff as an example
    initial begin

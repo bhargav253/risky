@@ -2,3 +2,5 @@
 +librescan +libext+.v+.sv+.vh+.svh
 -y .
 -y rtl
+-y rtl/core
+-y rtl/soc
