@@ -58,6 +58,43 @@ start:
 	li a1, 123456789
 	sw a1,0(a0)
 
-	/* trap */
-	ebreak
+	la  x1, tdat;
+	lw  x3, 0(x1);
+	li  x29, 0x00ff00ff;
+	li  x28, 2; \
+	bne x3, x29, fail;
+	jal	zero,pass;	
+back:	
+	ebreak;
+
+pass:
+	lui	a0,0x10000000>>12;
+	addi	a1,zero,'O';
+	addi	a2,zero,'K';
+	addi	a3,zero,'\n';
+	sw	a1,0(a0);
+	sw	a2,0(a0);
+	sw	a3,0(a0);
+	jal	zero,back;
+
+fail:	
+	lui	a0,0x10000000>>12;
+	addi	a1,zero,'E';
+	addi	a2,zero,'R';
+	addi	a3,zero,'O';
+	addi	a4,zero,'\n';
+	sw	a1,0(a0);
+	sw	a2,0(a0);
+	sw	a2,0(a0);
+	sw	a3,0(a0);
+	sw	a2,0(a0);
+	sw	a4,0(a0);
+	jal	zero,back;
+	
+tdat:
+tdat1:  .word 0x00ff00ff
+tdat2:  .word 0xff00ff00
+tdat3:  .word 0x0ff00ff0
+tdat4:  .word 0xf00ff00f
+	
 	
